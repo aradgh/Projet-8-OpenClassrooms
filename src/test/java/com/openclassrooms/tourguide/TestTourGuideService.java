@@ -19,10 +19,10 @@ import com.openclassrooms.tourguide.service.TourGuideService;
 import com.openclassrooms.tourguide.user.User;
 import tripPricer.Provider;
 
-public class TestTourGuideService {
+class TestTourGuideService {
 
 	@Test
-	public void getUserLocation() {
+	void getUserLocation() {
 		GpsUtil gpsUtil = new GpsUtil();
 		RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
 		InternalTestHelper.setInternalUserNumber(0);
@@ -31,11 +31,11 @@ public class TestTourGuideService {
 		User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
 		VisitedLocation visitedLocation = tourGuideService.trackUserLocation(user);
 		tourGuideService.tracker.stopTracking();
-		assertTrue(visitedLocation.userId.equals(user.getUserId()));
+        assertEquals(visitedLocation.userId, user.getUserId());
 	}
 
 	@Test
-	public void addUser() {
+	void addUser() {
 		GpsUtil gpsUtil = new GpsUtil();
 		RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
 		InternalTestHelper.setInternalUserNumber(0);
@@ -57,7 +57,7 @@ public class TestTourGuideService {
 	}
 
 	@Test
-	public void getAllUsers() {
+	void getAllUsers() {
 		GpsUtil gpsUtil = new GpsUtil();
 		RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
 		InternalTestHelper.setInternalUserNumber(0);
@@ -78,7 +78,7 @@ public class TestTourGuideService {
 	}
 
 	@Test
-	public void trackUser() {
+	void trackUser() {
 		GpsUtil gpsUtil = new GpsUtil();
 		RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
 		InternalTestHelper.setInternalUserNumber(0);
@@ -92,9 +92,9 @@ public class TestTourGuideService {
 		assertEquals(user.getUserId(), visitedLocation.userId);
 	}
 
-	@Disabled // Not yet implemented
+	@Disabled("Not yet implemented")
 	@Test
-	public void getNearbyAttractions() {
+	void getNearbyAttractions() {
 		GpsUtil gpsUtil = new GpsUtil();
 		RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
 		InternalTestHelper.setInternalUserNumber(0);
