@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import rewardCentral.RewardCentral;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 public class RewardsService {
@@ -35,7 +36,12 @@ public class RewardsService {
     }
 
     public void calculateRewards(User user) {
-        List<VisitedLocation> userLocations = user.getVisitedLocations();
+        /*
+        Ici, il est nécessaire d'utiliser un objet thread-safe comme CopyOnWriteArrayList<E>
+        car sinon, un autre thread comme celui de Tracker peut venir modifier la liste userLocations
+        pendant que cette méthode calculateRewards fait un forEach dessus.
+         */
+        List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
         List<Attraction> attractions = gpsUtil.getAttractions();
 
         for (VisitedLocation visitedLocation : userLocations) {
