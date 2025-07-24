@@ -1,6 +1,7 @@
 package com.openclassrooms.tourguide.tracker;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +42,18 @@ public class Tracker implements Runnable {
 			List<User> users = tourGuideService.getAllUsers();
 			logger.debug("Begin Tracker. Tracking {} users.", users.size());
 			stopWatch.start();
-			users.forEach(tourGuideService::trackUserLocation);
+			// Lancer les traitements asynchrones
+			/*
+			Ici, le .thenAccept(v -> {}) sert à transformer un CompletableFuture<VisitedLocation>
+			en un CompletableFuture<Void>. Parce que CompletableFuture.allOf(...) attend un tableau de
+			CompletableFuture<Void>. Il ne traite que des CompletableFuture<Void>.
+			 */
+			List<CompletableFuture<Void>> futures = users.stream()
+				.map(user -> tourGuideService.trackUserLocation(user).thenAccept(v -> {}))
+				.toList();
+
+			// Attendre que tous soient terminés
+			CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 			stopWatch.stop();
 			logger.debug("Tracker Time Elapsed: {} seconds.", TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()));
 			stopWatch.reset();

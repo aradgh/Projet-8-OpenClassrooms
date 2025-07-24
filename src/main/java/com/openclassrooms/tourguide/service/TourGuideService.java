@@ -17,6 +17,9 @@ import tripPricer.TripPricer;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
@@ -27,6 +30,7 @@ public class TourGuideService {
     private final RewardsService rewardsService;
     private final TripPricer tripPricer = new TripPricer();
     public final Tracker tracker;
+    private final ExecutorService executor = Executors.newFixedThreadPool(100);
 
     public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
         this.gpsUtil = gpsUtil;
@@ -44,12 +48,16 @@ public class TourGuideService {
         addShutDownHook();
     }
 
+    public void shutdownExecutor() {
+        executor.shutdown();
+    }
+
     public List<UserReward> getUserRewards(User user) {
         return user.getUserRewards();
     }
 
     public VisitedLocation getUserLocation(User user) {
-        return (!user.getVisitedLocations().isEmpty()) ? user.getLastVisitedLocation() : trackUserLocation(user);
+        return (!user.getVisitedLocations().isEmpty()) ? user.getLastVisitedLocation() : trackUserLocation(user).join();
     }
 
     public User getUser(String userName) {
@@ -77,11 +85,13 @@ public class TourGuideService {
         return providers;
     }
 
-    public VisitedLocation trackUserLocation(User user) {
-        VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
-        user.addToVisitedLocations(visitedLocation);
-        rewardsService.calculateRewards(user);
-        return visitedLocation;
+    public CompletableFuture<VisitedLocation> trackUserLocation(User user) {
+        return CompletableFuture.supplyAsync(() -> gpsUtil.getUserLocation(user.getUserId()), executor)
+            .thenApply(visitedLocation -> {
+                user.addToVisitedLocations(visitedLocation);
+                rewardsService.calculateRewards(user); // Async sans blocage
+                return visitedLocation;
+            });
     }
 
     /**

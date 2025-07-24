@@ -9,8 +9,12 @@ import gpsUtil.location.VisitedLocation;
 import org.springframework.stereotype.Service;
 import rewardCentral.RewardCentral;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class RewardsService {
@@ -21,10 +25,15 @@ public class RewardsService {
     private int proximityBuffer = DEFAULT_PROXIMITY_BUFFER;
     private final GpsUtil gpsUtil;
     private final RewardCentral rewardsCentral;
+    private final ExecutorService executor = Executors.newFixedThreadPool(100);
 
     public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
         this.gpsUtil = gpsUtil;
         this.rewardsCentral = rewardCentral;
+    }
+
+    public void shutdownExecutor() {
+        executor.shutdown();
     }
 
     public void setProximityBuffer(int proximityBuffer) {
@@ -35,22 +44,34 @@ public class RewardsService {
         proximityBuffer = DEFAULT_PROXIMITY_BUFFER;
     }
 
-    public void calculateRewards(User user) {
+    public CompletableFuture<Void> calculateRewards(User user) {
         /*
         Ici, il est nécessaire d'utiliser un objet thread-safe comme CopyOnWriteArrayList<E>
         car sinon, un autre thread comme celui de Tracker peut venir modifier la liste userLocations
         pendant que cette méthode calculateRewards fait un forEach dessus.
          */
         List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
-        List<Attraction> attractions = gpsUtil.getAttractions();
 
-        for (VisitedLocation visitedLocation : userLocations) {
-            attractions.stream()
-                .filter(attraction -> isEligibleForReward(user, visitedLocation, attraction))
-                .forEach(attraction ->
-                    user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)))
-                );
-        }
+        return CompletableFuture.supplyAsync(gpsUtil::getAttractions, executor)
+            .thenCompose(attractions -> {
+                List<CompletableFuture<UserReward>> futures = new ArrayList<>();
+
+                for (VisitedLocation visitedLocation : userLocations) {
+                    attractions.stream()
+                        .filter(attraction -> isEligibleForReward(user, visitedLocation, attraction))
+                        .forEach(attraction -> {
+                            CompletableFuture<UserReward> futureReward = getRewardPoints(attraction, user)
+                                .thenApply(points -> new UserReward(visitedLocation, attraction, points));
+                            futures.add(futureReward);
+                        });
+                }
+
+                return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .thenAccept(v -> futures.stream()
+                        .map(CompletableFuture::join)
+                        .forEach(user::addUserReward)
+                    );
+            });
     }
 
     private boolean isEligibleForReward(User user, VisitedLocation visitedLocation, Attraction attraction) {
@@ -70,8 +91,10 @@ public class RewardsService {
         return getDistance(attraction, visitedLocation.location) <= proximityBuffer;
     }
 
-    private int getRewardPoints(Attraction attraction, User user) {
-        return rewardsCentral.getAttractionRewardPoints(attraction.attractionId, user.getUserId());
+
+    private CompletableFuture<Integer> getRewardPoints(Attraction attraction, User user) {
+        return CompletableFuture.supplyAsync(() ->
+            rewardsCentral.getAttractionRewardPoints(attraction.attractionId, user.getUserId()), executor);
     }
 
     public double getDistance(Location loc1, Location loc2) {
