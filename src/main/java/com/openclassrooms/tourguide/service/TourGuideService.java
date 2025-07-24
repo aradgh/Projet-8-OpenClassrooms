@@ -84,16 +84,20 @@ public class TourGuideService {
         return visitedLocation;
     }
 
+    /**
+     * Renvoie les CINQ attractions les plus proches d'une position visitée, triées par distance croissante.
+     */
     public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {
-        List<Attraction> nearbyAttractions = new ArrayList<>();
-        for (Attraction attraction : gpsUtil.getAttractions()) {
-            if (rewardsService.isWithinAttractionProximity(attraction, visitedLocation.location)) {
-                nearbyAttractions.add(attraction);
-            }
-        }
-
-        return nearbyAttractions;
+        return gpsUtil.getAttractions().stream()
+            .map(attraction ->
+                Map.entry(attraction, rewardsService.getDistance(attraction, visitedLocation.location)
+                ))
+            .sorted(Comparator.comparingDouble(Map.Entry::getValue))
+            .limit(5)
+            .map(Map.Entry::getKey)
+            .toList();
     }
+
 
     private void addShutDownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread() {

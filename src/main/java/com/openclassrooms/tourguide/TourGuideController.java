@@ -1,5 +1,6 @@
 package com.openclassrooms.tourguide;
 
+import com.openclassrooms.tourguide.dto.NearbyAttractionsDTO;
 import com.openclassrooms.tourguide.service.TourGuideService;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
@@ -30,22 +31,23 @@ public class TourGuideController {
     public VisitedLocation getLocation(@RequestParam String userName) {
     	return tourGuideService.getUserLocation(getUser(userName));
     }
-    
-    //  TODO: Change this method to no longer return a List of Attractions.
- 	//  Instead: Get the closest five tourist attractions to the user - no matter how far away they are.
- 	//  Return a new JSON object that contains:
-    	// Name of Tourist attraction, 
-        // Tourist attractions lat/long, 
-        // The user's location lat/long, 
+
+ 	//  Returns a new JSON object that contains:
+    	// Names of Tourist attractions,
+        // Tourist attractions lat/long,
+        // The user's location lat/long,
         // The distance in miles between the user's location and each of the attractions.
         // The reward points for visiting each Attraction.
         //    Note: Attraction reward points can be gathered from RewardsCentral
     @GetMapping("/getNearbyAttractions")
-    public List<Attraction> getNearbyAttractions(@RequestParam String userName) {
-    	VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
-    	return tourGuideService.getNearByAttractions(visitedLocation);
+    public NearbyAttractionsDTO getNearbyAttractions(@RequestParam String userName) {
+        VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
+        return new NearbyAttractionsDTO(
+            tourGuideService.getNearByAttractions(visitedLocation),
+            visitedLocation
+        );
     }
-    
+
     @GetMapping("/getRewards")
     public List<UserReward> getRewards(@RequestParam String userName) {
     	return tourGuideService.getUserRewards(getUser(userName));
