@@ -44,7 +44,7 @@ jobs:
 
     # Étape 7 - Stocker l'artefact JAR/WAR pour téléchargement
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifact
           path: target/*.jar
