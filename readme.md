@@ -1,3 +1,4 @@
+![Build Status](https://github.com/aradgh/Projet-8-OpenClassrooms/actions/workflows/ci.yml/badge.svg)
 # Technologies
 
 > Java 17  
