@@ -34,13 +34,17 @@ jobs:
       - name: Compile project
         run: mvn compile
 
-    # Étape 5 - Tests (sans les tests de performances pour gagner du temps)
+    # Étape 5 - Tests 
+    # Pour désactiver les tests de performances pour gagner du temps, remplacez "mvn test" par
+    # mvn test -Dtest=!com.openclassrooms.tourguide.TestPerformance
       - name: Run unit tests (excluding performance tests)
-        run: mvn test -Dtest=!com.openclassrooms.tourguide.TestPerformance
+        run: mvn test
 
-    # Étape 6 - Build des artefacts (sans les tests de performances pour gagner du temps)
+    # Étape 6 - Build des artefacts
+    # Pour désactiver les tests de performances pour gagner du temps, remplacez "mvn package" par
+    # mvn package -DskipTests
       - name: Package the project
-        run: mvn package -DskipTests
+        run: mvn package
 
     # Étape 7 - Stocker l'artefact JAR/WAR pour téléchargement
       - name: Upload build artifact
