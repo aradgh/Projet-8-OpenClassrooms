@@ -1,12 +1,7 @@
 package com.openclassrooms.tourguide.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.openclassrooms.tourguide.TourGuideModule;
-import com.openclassrooms.tourguide.service.RewardsService;
-import gpsUtil.location.Attraction;
 import gpsUtil.location.Location;
-import gpsUtil.location.VisitedLocation;
-import rewardCentral.RewardCentral;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +26,7 @@ public class NearbyAttractionsDTO {
     private final Location userLocation;
 
     @JsonProperty("nearbyAttractions")
-    private final List<AttractionInfo> attractions = new ArrayList<>();
+    private List<AttractionInfo> attractions = new ArrayList<>();
 
     public Location getUserLocation() {
         return userLocation;
@@ -41,16 +36,8 @@ public class NearbyAttractionsDTO {
         return attractions;
     }
 
-    public NearbyAttractionsDTO(List<Attraction> nearbyAttractions, VisitedLocation visitedLocation) {
-        RewardCentral rewardCentral = new TourGuideModule().getRewardCentral();
-        RewardsService rewardsService = new TourGuideModule().getRewardsService();
-
-        this.userLocation = visitedLocation.location;
-
-        for (Attraction a : nearbyAttractions) {
-            double distance = rewardsService.getDistance(a, visitedLocation.location);
-            int points = rewardCentral.getAttractionRewardPoints(a.attractionId, visitedLocation.userId);
-            attractions.add(new AttractionInfo(a.attractionName, new Location(a.latitude, a.longitude), distance, points));
-        }
+    public NearbyAttractionsDTO(Location userLocation, List<AttractionInfo> attractions) {
+        this.userLocation = userLocation;
+        this.attractions = attractions;
     }
 }
