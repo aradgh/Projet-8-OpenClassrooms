@@ -37,7 +37,7 @@ jobs:
     # Étape 5 - Tests 
     # Pour désactiver les tests de performances pour gagner du temps, remplacez "mvn test" par
     # mvn test -Dtest=!com.openclassrooms.tourguide.TestPerformance
-      - name: Run unit tests (excluding performance tests)
+      - name: Run unit tests
         run: mvn test
 
     # Étape 6 - Build des artefacts
